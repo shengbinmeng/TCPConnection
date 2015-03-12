@@ -1,1 +1,1 @@
-Demonstrate TCP connections in Java
+Demonstrate TCP connections.
