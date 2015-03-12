@@ -22,24 +22,20 @@ public class TcpServer extends Thread {
 						server.getInputStream());
 				String message = in.readUTF();
 				System.out.println("SERVER: Received \"" + message + "\"");
+				String sub = message.substring(message.indexOf('#')+1, message.lastIndexOf('#'));
+				long count = Long.parseLong(sub);
 				DataOutputStream out = new DataOutputStream(
 						server.getOutputStream());
-				String reply = "ECHO " + message;
-				out.writeUTF(reply);
+				for (long i = 0; i < count; i++) {
+				    String reply = "Data Line " + i;
+				    out.writeUTF(reply);
+				}
 			} catch (SocketTimeoutException e) {
 				//e.printStackTrace();
 				//break;
 			} catch (IOException e) {
-				//e.printStackTrace();
-				//break;
-			}
-			
-			if (server != null) {
-				try {
-					server.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				e.printStackTrace();
+				break;
 			}
 		}
 	}
