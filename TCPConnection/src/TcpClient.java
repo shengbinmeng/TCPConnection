@@ -35,24 +35,28 @@ public class TcpClient extends Thread {
 	}
 	
 	public static void main(String[] args) {
-		String serverName = "localhost";
-		if (args.length > 0) {
-			serverName = args[0];
+		String help = "Usage: TcpClient <host> <port> [count]";
+		if (args.length < 2 || args.length > 3) {
+			System.out.println("Number of arguments is invaild!");
+			System.out.println(help);
+			return;
 		}
-		int port = 8989;
-		if (args.length > 1) {
-			port = Integer.parseInt(args[1]);
-		}
-		long count = 10;
-		if (args.length > 2) {
-			count = Integer.parseInt(args[2]);
-		}
-		mCount = count;
+		String serverName  = args[0];
 		try {
+			int port = Integer.parseInt(args[1]);
+			if (args.length == 3) {
+				mCount = Long.parseLong(args[2]);
+			} else {
+				// Default
+				mCount = 10;
+			}
 			Thread t = new TcpClient(serverName, port);
 			t.start();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} catch (NumberFormatException e) {
+			System.out.println("<port> or [count] must be integer!");
+			System.out.println(help);
 		}
 	}
 }

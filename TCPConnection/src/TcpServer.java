@@ -30,8 +30,9 @@ public class TcpServer extends Thread {
 				    String reply = "Data Line " + i;
 				    out.writeUTF(reply);
 				}
+				System.out.println("SERVER: Done sending " + count + " lines of data.");
 			} catch (SocketTimeoutException e) {
-				//e.printStackTrace();
+				e.printStackTrace();
 				//break;
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -41,9 +42,19 @@ public class TcpServer extends Thread {
 	}
 
 	public static void main(String[] args) {
-		int port = 8989;
+		String help = "Usage: TcpServer [port]";
+		if (args.length > 1) {
+			System.out.println(help);
+			return;
+		}
+		int port = 9999;
 		if (args.length > 0) {
-			port = Integer.parseInt(args[0]);
+			try {
+				port = Integer.parseInt(args[0]);
+			}  catch (NumberFormatException e) {
+				System.out.println("[port] is invalid!");
+				System.out.println(help);
+			}
 		}
 		try {
 			Thread t = new TcpServer(port);
