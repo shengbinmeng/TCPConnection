@@ -14,21 +14,35 @@ public class TcpClient extends Thread {
 	public void run() {
 		try {
 			Socket clientSocket = new Socket(mServerName, mServerPort);
-			System.out.println("CLIENT: Just connected to "
+			System.out.println("Connected to "
 					+ clientSocket.getRemoteSocketAddress());
+			BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 			OutputStream outToServer = clientSocket.getOutputStream();
 			DataOutputStream out = new DataOutputStream(outToServer);
-			String message = "Give me #" + mCount + "# lines of data!";
-			out.writeUTF(message);
 			InputStream inFromServer = clientSocket.getInputStream();
 			DataInputStream in = new DataInputStream(inFromServer);
-			System.out.println("CLIENT: Server replyes with:");
-			for (long i = 0; i < mCount; i++) {
-				String reply = in.readUTF();
-			    System.out.println(reply);
+			long count = 1;
+			if (mCount > 0) {
+				count = mCount;
 			}
+			while (count > 0) {
+				String message = inFromUser.readLine();
+				if (message == null) {
+					break;
+				}
+				out.writeUTF(message);
+				if (message.equalsIgnoreCase("Bye")) {
+					break;
+				}
+				String reply = in.readUTF();
+			    System.out.println("Server replyed with: " + reply);
+			    if (mCount > 0) {
+				    count--;
+			    }
+			}
+			
 			clientSocket.close();
-			System.out.println("CLIENT: connection closed");
+			System.out.println("Connection closed");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -48,7 +62,7 @@ public class TcpClient extends Thread {
 				mCount = Long.parseLong(args[2]);
 			} else {
 				// Default
-				mCount = 10;
+				mCount = -1;
 			}
 			Thread t = new TcpClient(serverName, port);
 			t.start();

@@ -10,30 +10,33 @@ public class TcpServer extends Thread {
 	}
 
 	public void run() {
-		System.out.println("SERVER: Waiting for client on port "
+		System.out.println("Server started, listening on port "
 				+ serverSocket.getLocalPort() + "...");
-		Socket server = null;
 		while (true) {
 			try {
-				server = serverSocket.accept();
-				System.out.println("SERVER: Connected to "
+				Socket server = serverSocket.accept();
+				System.out.println("Connected to "
 						+ server.getRemoteSocketAddress());
 				DataInputStream in = new DataInputStream(
 						server.getInputStream());
-				String message = in.readUTF();
-				System.out.println("SERVER: Received \"" + message + "\"");
-				String sub = message.substring(message.indexOf('#')+1, message.lastIndexOf('#'));
-				long count = Long.parseLong(sub);
 				DataOutputStream out = new DataOutputStream(
 						server.getOutputStream());
-				for (long i = 0; i < count; i++) {
-				    String reply = "Data Line " + i;
-				    out.writeUTF(reply);
+				while (true) {
+					try {
+						String message = in.readUTF();
+						System.out.println("Received \"" + message + "\"");
+						if (message.equalsIgnoreCase("Bye")) {
+							break;
+						}
+						String reply = "ECHO " + message;
+						out.writeUTF(reply);
+					} catch (Exception e) {
+						break;
+					}
 				}
-				System.out.println("SERVER: Done sending " + count + " lines of data.");
+				System.out.println("Done serving this client");
 			} catch (SocketTimeoutException e) {
-				e.printStackTrace();
-				//break;
+				continue;
 			} catch (IOException e) {
 				e.printStackTrace();
 				break;
