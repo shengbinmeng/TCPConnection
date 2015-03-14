@@ -12,15 +12,22 @@ public class TcpServer extends Thread {
 	public void run() {
 		System.out.println("Server started, listening on port "
 				+ serverSocket.getLocalPort() + "...");
+		
+		// Keep running the server until an exception occurs
 		while (true) {
 			try {
+				// Wait for a client to connect
 				Socket server = serverSocket.accept();
 				System.out.println("Connected to "
 						+ server.getRemoteSocketAddress());
+				
+				// Get input and output stream from the TCP socket
 				DataInputStream in = new DataInputStream(
 						server.getInputStream());
 				DataOutputStream out = new DataOutputStream(
 						server.getOutputStream());
+				
+				// Keep serving this client until exception occurs or "Bye" message is received
 				while (true) {
 					try {
 						String message = in.readUTF();
@@ -28,6 +35,8 @@ public class TcpServer extends Thread {
 						if (message.equalsIgnoreCase("Bye")) {
 							break;
 						}
+						
+						// The service is simply echoing back the received message
 						String reply = "ECHO " + message;
 						out.writeUTF(reply);
 					} catch (Exception e) {
@@ -36,6 +45,7 @@ public class TcpServer extends Thread {
 				}
 				System.out.println("Done serving this client");
 			} catch (SocketTimeoutException e) {
+				// If accept times out, continue to wait
 				continue;
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -50,6 +60,8 @@ public class TcpServer extends Thread {
 			System.out.println(help);
 			return;
 		}
+		
+		// Use default port 9999 unless a port is provided
 		int port = 9999;
 		if (args.length > 0) {
 			try {
