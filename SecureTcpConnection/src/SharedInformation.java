@@ -1,21 +1,34 @@
-import java.util.ArrayList;
-
 
 public class SharedInformation {
-	static final int schemeNumber = 5;
-	static final int keyNumber = 30;
-
-	static ArrayList<Scheme> schemes;
 	
-	static {
-		schemes = new ArrayList<Scheme>();
-		for (int i = 0; i < schemeNumber; i++) {
-			int[][] p = {
-			{1, 2, 3},
-			{4, 5, 6}
-			};
-			Scheme s = new Scheme(i, p);
-			schemes.add(s);
-		}
-	}
+	// Use string to map chars to index(0-29)
+	static final String keys = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ,.?";
+	
+	// The permutations (I just simply make them up; in practice they may need to be designed carefully)
+	static final int[][] p0 = {
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29},
+		{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 0}
+	};
+	static final int[][] p1 = {
+		{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 0, 1},
+		{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 0, 1, 2, 3}
+	};
+	static final int[][] p2 = {
+		{5, 6, 7, 8, 9, 10, 11, 12, 13, 0, 14, 15, 1, 16, 17, 18, 19, 2, 20, 21, 22, 3, 23, 24, 4, 25, 26, 27, 28, 29},
+		{3, 8, 9, 10, 2, 11, 13, 12, 14, 4, 15, 16, 17, 18, 19, 20, 21, 22, 23, 5, 24, 25, 6, 26, 27, 28, 29, 7, 0, 4},
+		{5, 6, 7, 8, 9, 10, 11, 12, 13, 0, 14, 15, 1, 16, 17, 18, 19, 2, 20, 21, 22, 3, 23, 24, 4, 25, 26, 27, 28, 29}
+	};
+	static final int[][] p3 = {
+		{13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+		{13, 14, 15, 16, 17, 18, 19, 20, 21, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 22, 23, 24, 25, 26, 27, 28, 29}
+	};
+	static final int[][] p4 = {
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29},
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29}
+	};
+	static final int[][][] schemePermutations = {p0, p1, p2, p3, p4};
+	
+	// Shared non-secret values in the Diffie-Hellman key exchange
+	static final int DH_p  = 23; // A prime number p
+	static final int DH_g = 5; // A primitive root modulo p
 }

@@ -9,11 +9,6 @@ public class SecureTcpClient extends Thread {
 		mServerName = serverName;
 		mServerPort = port;
 	}
-	
-	private int generateKey() {
-		
-		return 0;
-	}
 
 	public void run() {
 		try {
@@ -28,36 +23,84 @@ public class SecureTcpClient extends Thread {
 			DataOutputStream out = new DataOutputStream(outToServer);
 			InputStream inFromServer = clientSocket.getInputStream();
 			DataInputStream in = new DataInputStream(inFromServer);
-			
-			int key = generateKey();
-			int index = key % SharedInformation.schemeNumber;
-			Scheme scheme = SharedInformation.schemes.get(index);
-			RotorMachine machine = new RotorMachine(SharedInformation.keyNumber, scheme);
-			
+			RotorMachine machine = null;
 			while (true) {
 				String message = inFromUser.readLine();
 				if (message == null) {
 					break;
 				}
+				if (message.equals("")) {
+					continue;
+				}
 				
-				String enctyptedMessage = machine.encrypt(message);
+				if (message.equalsIgnoreCase("P-Secure") && machine == null) {
+					// Generate the key
+					out.writeUTF(message);
+					String reply = in.readUTF();
+					if (reply.equalsIgnoreCase("P-Secure") == false) {
+						System.out.println("Server replyed with: " + reply);
+						System.out.println("Something wrong!");
+						break;
+					}
+					int DH_p = SharedInformation.DH_p;
+					int DH_g = SharedInformation.DH_g;
+					int DH_a = 6;
+					int DH_A = (int) (((long)Math.pow(DH_g, DH_a)) % DH_p); // 8
+					message = "" + DH_A;
+					out.writeUTF(message);
+					reply = in.readUTF();
+					int DH_B = Integer.parseInt(reply);
+					int DH_s = (int) (((long)Math.pow(DH_B, DH_a)) % DH_p);
+					System.out.println("Secret Key: " + DH_s);
+					int secretKey = DH_s;
+					int index = secretKey % SharedInformation.schemePermutations.length;
+					int[][] schemePermutation = SharedInformation.schemePermutations[index];
+					Scheme scheme = new Scheme(schemePermutation);
+					machine = new RotorMachine(scheme);
+					System.out.println("Secured. Following messages will be encrypted.");
+					continue;
+				}
+				if (message.equalsIgnoreCase("P-Secure-Off") && machine != null) {
+					message = machine.encrypt(message);
+					out.writeUTF(message);
+					String reply = in.readUTF();
+					reply = machine.decrypt(reply);
+					if (reply.equalsIgnoreCase("P-Secure-Off") == false) {
+						System.out.println("Server replyed with: " + reply);
+						System.out.println("Something wrong!");
+						break;
+					}
+					machine = null;
+					System.out.println("Secure off.");
+					continue;
+				}
 				
-				out.writeUTF(enctyptedMessage);
+				if (machine != null) {
+					String enctyptedMessage = machine.encrypt(message);
+					out.writeUTF(enctyptedMessage);
+				} else {
+					out.writeUTF(message);
+				}
 				
 				// End the communication when the user inputs "Bye" (case-insensitive)
-				if (message.equalsIgnoreCase("Bye")) {
+				if (message.equalsIgnoreCase("P-Bye")) {
 					break;
 				}
 				
 				// Get reply from the server and print it
 				String reply = in.readUTF();
 			    System.out.println("Server replyed with: " + reply);
+				if (machine != null) {
+					reply = machine.decrypt(reply);
+					System.out.println("Server reply decrypted: " + reply);
+				}
 			}
 			
 			clientSocket.close();
 			System.out.println("Connection closed");
 		} catch (IOException e) {
 			e.printStackTrace();
+			System.out.println("Error. The server may be down.");
 		}
 	}
 	

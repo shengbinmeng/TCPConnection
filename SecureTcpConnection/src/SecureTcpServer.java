@@ -26,19 +26,57 @@ public class SecureTcpServer extends Thread {
 						server.getInputStream());
 				DataOutputStream out = new DataOutputStream(
 						server.getOutputStream());
-				
+				RotorMachine machine = null;
 				// Keep serving this client until exception occurs or "Bye" message is received
 				while (true) {
-					try {
+					try {						
 						String message = in.readUTF();
 						System.out.println("Received \"" + message + "\"");
-						if (message.equalsIgnoreCase("Bye")) {
+
+						if (machine != null) {
+							message = machine.decrypt(message);
+							System.out.println("Decrypted \"" + message + "\"");
+						}
+						if (message.equalsIgnoreCase("P-Bye")) {
 							break;
+						}
+						if (message.equalsIgnoreCase("P-Secure-Off") && machine != null) {
+							String reply = machine.encrypt("P-Secure-Off");
+							out.writeUTF(reply);
+							machine = null;
+							System.out.println("Secure off.");
+							continue;
+						}
+						if (message.equalsIgnoreCase("P-Secure") && machine == null) {
+							String reply = "P-Secure";
+							out.writeUTF(reply);
+							
+							int DH_p = SharedInformation.DH_p;
+							int DH_g = SharedInformation.DH_g;
+							message = in.readUTF();
+							int DH_A = Integer.parseInt(message);
+							int DH_b = 15;
+							int DH_B = (int) (((long)Math.pow(DH_g, DH_b)) % DH_p);
+							reply = "" + DH_B;
+							out.writeUTF(reply);
+							int DH_s = (int) (((long)Math.pow(DH_A, DH_b)) % DH_p);
+							System.out.println("Secret Key: " + DH_s);
+							int secretKey = DH_s;
+							int index = secretKey % SharedInformation.schemePermutations.length;
+							int[][] schemePermutation = SharedInformation.schemePermutations[index];
+							Scheme scheme = new Scheme(schemePermutation);
+							machine = new RotorMachine(scheme);
+							System.out.println("Secured. Following messages will be encrypted.");
+							continue;
 						}
 						
 						// The service is simply echoing back the received message
 						String reply = "ECHO " + message;
+						if (machine != null) {
+							reply = machine.encrypt(reply);
+						}
 						out.writeUTF(reply);
+						
 					} catch (Exception e) {
 						break;
 					}

@@ -5,8 +5,8 @@ public class RotorMachine {
 	private int numberOfRotors;
 	private ArrayList<Rotor> rotors;
 	
-	RotorMachine(int m, Scheme s) {
-		numberOfKeys = m;
+	RotorMachine(Scheme s) {
+		numberOfKeys = s.permutations[0].length;
 		numberOfRotors = s.rotorNumber;
 		
 		rotors = new ArrayList<Rotor>();
@@ -29,24 +29,29 @@ public class RotorMachine {
 	}
 	
 	public String encrypt(String message) {
-		StringBuilder builder = new StringBuilder();
-		for (int i = 0; i < message.length(); i++) {
-			char c = message.charAt(i);
-			c = (char) encipher((int)c);
-			builder.append(c);
-		}
-		return builder.toString();
+		//StringBuilder builder = new StringBuilder();
+		//for (int i = 0; i < message.length(); i++) {
+		//	char c = message.charAt(i);
+		//	c = (char) encipher((int)c);
+		//	builder.append(c);
+		//}
+		//return builder.toString();
+		return "E" + message;
+	}
+	
+	public String decrypt(String message) {
+		return message.substring(1);
 	}
 	
 }
 
 class Scheme {
-	public int rotorNumber;
 	public int[][] permutations;
+	public int rotorNumber;
 	
-	Scheme(int r, int[][] p) {
-		rotorNumber = r;
+	Scheme(int[][] p) {
 		permutations = p;
+		rotorNumber = p.length;
 	}
 }
 
