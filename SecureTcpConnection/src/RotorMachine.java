@@ -1,46 +1,76 @@
 import java.util.ArrayList;
 
 public class RotorMachine {
-	private int numberOfKeys;
-	private int numberOfRotors;
 	private ArrayList<Rotor> rotors;
 	
 	RotorMachine(Scheme s) {
-		numberOfKeys = s.permutations[0].length;
-		numberOfRotors = s.rotorNumber;
+		int numberOfKeys = s.permutations[0].length;
+		int rotorNumber = s.rotorNumber;
 		
 		rotors = new ArrayList<Rotor>();
-		for (int i = 0; i < numberOfRotors; i++) {
-			int strokesPerRotation = (int) Math.pow(numberOfKeys, numberOfRotors - (i+1));
+		for (int i = 0; i < rotorNumber; i++) {
+			int strokesPerRotation = (int) Math.pow(numberOfKeys, rotorNumber - (i+1));
 			int[] permutation = s.permutations[i];
-			rotors.add(new Rotor(numberOfKeys, permutation, strokesPerRotation));
+			rotors.add(new Rotor(permutation, strokesPerRotation));
 		}
 	}
 	
-	
-	public int encipher(int input) {
-		int result = input;
-		for (int i = 0; i < numberOfRotors; i++) {
+	private void reset() {
+		for (int i = 0; i < rotors.size(); i++) {
 			Rotor r = rotors.get(i);
-			result = r.transform(result);
+			r.reset();
+		}
+	}
+	
+	private char encipher(char symbol) {
+		char code = symbol;
+		for (int i = 0; i < rotors.size(); i++) {
+			Rotor r = rotors.get(i);
+			code = r.transform(code);
+		}
+		return code;
+	}
+	
+	private char decipher(char code) {
+		char symbol = code;
+		for (int i = 0; i < rotors.size(); i++) {
+			Rotor r = rotors.get(rotors.size()-1 - i);
+			symbol = r.transformInverse(symbol);
 		}
 		
-		return result;
+		return symbol;
 	}
 	
 	public String encrypt(String message) {
-		//StringBuilder builder = new StringBuilder();
-		//for (int i = 0; i < message.length(); i++) {
-		//	char c = message.charAt(i);
-		//	c = (char) encipher((int)c);
-		//	builder.append(c);
-		//}
-		//return builder.toString();
-		return "E" + message;
+		message = message.toUpperCase();
+		StringBuilder builder = new StringBuilder();
+		for (int i = 0; i < message.length(); i++) {
+			char c = message.charAt(i);
+			if (SharedInformation.keys.indexOf(c) == -1) {
+				return "";
+			}
+			c = encipher(c);
+			builder.append(c);
+		}
+		String result = builder.toString();
+		reset();
+		return result;
 	}
 	
 	public String decrypt(String message) {
-		return message.substring(1);
+		message = message.toUpperCase();
+		StringBuilder builder = new StringBuilder();
+		for (int i = 0; i < message.length(); i++) {
+			char c = message.charAt(i);
+			if (SharedInformation.keys.indexOf(c) == -1) {
+				return "";
+			}
+			c = decipher(c);
+			builder.append(c);
+		}
+		String result = builder.toString();
+		reset();
+		return result;
 	}
 	
 }
@@ -56,15 +86,18 @@ class Scheme {
 }
 
 class Rotor {
-	private int numberOfPins;
 	private int[] permutation;
 	private int rotation;
 	private int strokes;
 	private int strokesPerRotation;
+	private int[] permutationInverse;
 	
-	Rotor(int m, int[] p, int s) {
-		numberOfPins = m;
+	Rotor(int[] p, int s) {
 		permutation = p;
+		permutationInverse = new int[p.length];
+		for (int i = 0; i < p.length; i++) {
+			permutationInverse[p[i]] = i;
+		}
 		strokesPerRotation = s;
 		rotation = 0;
 		strokes = 0;
@@ -72,23 +105,47 @@ class Rotor {
 	
 	private void rotate() {
 		rotation++;
-		if (rotation > numberOfPins - 1) {
+		if (rotation > permutation.length - 1) {
 			rotation = 0;
 		}
 	}
 	
-	public int transform(int input) {
-		int index = input + rotation;
-		if (index > numberOfPins - 1) {
-			index = index - numberOfPins;
+	public char transform(char symbol) {
+		int index = SharedInformation.keys.indexOf(symbol);
+		index = index + rotation;
+		if (index > permutation.length - 1) {
+			index = index - permutation.length;
 		}
-		int output = permutation[index];
+		int newIndex = permutation[index];
+		char code = SharedInformation.keys.charAt(newIndex);
 		
 		strokes++;
 		if (strokes == strokesPerRotation) {
 			rotate();
 			strokes = 0;
 		}
-		return output;
+		return code;
+	}
+	
+	public char transformInverse(char code) {
+		int newIndex = SharedInformation.keys.indexOf(code);
+		int index = permutationInverse[newIndex];
+		index = index - rotation;
+		if (index < 0) {
+			index = index + permutation.length;
+		}
+		char symbol = SharedInformation.keys.charAt(index);
+		
+		strokes++;
+		if (strokes == strokesPerRotation) {
+			rotate();
+			strokes = 0;
+		}
+		return symbol;
+	}
+	
+	public void reset() {
+		rotation = 0;
+		strokes = 0;
 	}
 }

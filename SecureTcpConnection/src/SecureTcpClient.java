@@ -106,7 +106,6 @@ public class SecureTcpClient extends Thread {
 	
 	public static void main(String[] args) {
 		
-		// Argument <count> means the number of lines the user will send at most
 		String help = "Usage: TcpClient <host> <port>";
 		if (args.length != 2) {
 			System.out.println("Number of arguments is invaild!");
