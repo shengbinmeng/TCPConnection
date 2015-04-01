@@ -33,11 +33,11 @@ public class SecureTcpClient extends Thread {
 					continue;
 				}
 				
-				if (message.equalsIgnoreCase("P-Secure") && machine == null) {
+				if (message.equalsIgnoreCase("!Secure") && machine == null) {
 					// Generate the key
 					out.writeUTF(message);
 					String reply = in.readUTF();
-					if (reply.equalsIgnoreCase("P-Secure") == false) {
+					if (reply.equalsIgnoreCase("!Secure") == false) {
 						System.out.println("Server replyed with: " + reply);
 						System.out.println("Something wrong!");
 						break;
@@ -51,7 +51,6 @@ public class SecureTcpClient extends Thread {
 					reply = in.readUTF();
 					int DH_B = Integer.parseInt(reply);
 					int DH_s = (int) (((long)Math.pow(DH_B, DH_a)) % DH_p);
-					System.out.println("Secret Key: " + DH_s);
 					int secretKey = DH_s;
 					int index = secretKey % SharedInformation.schemePermutations.length;
 					int[][] schemePermutation = SharedInformation.schemePermutations[index];
@@ -60,12 +59,12 @@ public class SecureTcpClient extends Thread {
 					System.out.println("Secured. Following messages will be encrypted.");
 					continue;
 				}
-				if (message.equalsIgnoreCase("P-Secure-Off") && machine != null) {
+				if (message.equalsIgnoreCase("!SecureOff") && machine != null) {
 					message = machine.encrypt(message);
 					out.writeUTF(message);
 					String reply = in.readUTF();
 					reply = machine.decrypt(reply);
-					if (reply.equalsIgnoreCase("P-Secure-Off") == false) {
+					if (reply.equalsIgnoreCase("!SecureOff") == false) {
 						System.out.println("Server replyed with: " + reply);
 						System.out.println("Something wrong!");
 						break;
@@ -83,7 +82,7 @@ public class SecureTcpClient extends Thread {
 				}
 				
 				// End the communication when the user inputs "Bye" (case-insensitive)
-				if (message.equalsIgnoreCase("P-Bye")) {
+				if (message.equalsIgnoreCase("!Bye")) {
 					break;
 				}
 				

@@ -37,18 +37,18 @@ public class SecureTcpServer extends Thread {
 							message = machine.decrypt(message);
 							System.out.println("Decrypted \"" + message + "\"");
 						}
-						if (message.equalsIgnoreCase("P-Bye")) {
+						if (message.equalsIgnoreCase("!Bye")) {
 							break;
 						}
-						if (message.equalsIgnoreCase("P-Secure-Off") && machine != null) {
-							String reply = machine.encrypt("P-Secure-Off");
+						if (message.equalsIgnoreCase("!SecureOff") && machine != null) {
+							String reply = machine.encrypt("!SecureOff");
 							out.writeUTF(reply);
 							machine = null;
 							System.out.println("Secure off.");
 							continue;
 						}
-						if (message.equalsIgnoreCase("P-Secure") && machine == null) {
-							String reply = "P-Secure";
+						if (message.equalsIgnoreCase("!Secure") && machine == null) {
+							String reply = "!Secure";
 							out.writeUTF(reply);
 							
 							int DH_p = SharedInformation.DH_p;
@@ -60,7 +60,6 @@ public class SecureTcpServer extends Thread {
 							reply = "" + DH_B;
 							out.writeUTF(reply);
 							int DH_s = (int) (((long)Math.pow(DH_A, DH_b)) % DH_p);
-							System.out.println("Secret Key: " + DH_s);
 							int secretKey = DH_s;
 							int index = secretKey % SharedInformation.schemePermutations.length;
 							int[][] schemePermutation = SharedInformation.schemePermutations[index];
