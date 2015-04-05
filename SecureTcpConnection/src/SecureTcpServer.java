@@ -26,42 +26,66 @@ public class SecureTcpServer extends Thread {
 						server.getInputStream());
 				DataOutputStream out = new DataOutputStream(
 						server.getOutputStream());
-				
-				// The process of the Diffie-Hellman key exchange
-				int DH_p = SharedInformation.DH_p;
-				int DH_g = SharedInformation.DH_g;
-				String received = in.readUTF();
-				int DH_A = Integer.parseInt(received);
-				int DH_b = 15; // The number we secretly choose
-				int DH_B = (int) (((long)Math.pow(DH_g, DH_b)) % DH_p);
-				String sent = "" + DH_B;
-				out.writeUTF(sent);
-				int DH_s = (int) (((long)Math.pow(DH_A, DH_b)) % DH_p);
-				
-				// Use the secret key to determine a scheme and construct a machine
-				int secretKey = DH_s;
-				int index = secretKey % SharedInformation.schemePermutations.length;
-				int[][] schemePermutation = SharedInformation.schemePermutations[index];
-				Scheme scheme = new Scheme(schemePermutation);
-				RotorMachine machine = new RotorMachine(scheme);
-				System.out.println("Secured. Following messages will be encrypted.");				
+				RotorMachine machine = null;
 				
 				// Keep serving this client until exception occurs or "Bye" message is received
 				while (true) {
 					try {						
 						String message = in.readUTF();
 						System.out.println("Received \"" + message + "\"");
-						message = machine.decrypt(message);
-						System.out.println("Decrypted \"" + message + "\"");
+
+						if (machine != null) {
+							// We are communicating in secure
+							message = machine.decrypt(message);
+							System.out.println("Decrypted \"" + message + "\"");
+						}
 						
-						if (message.equalsIgnoreCase("Bye")) {
+						if (message.equalsIgnoreCase("!Bye")) {
 							// The client asks for terminating
 							break;
 						}
 						
+						if (message.equalsIgnoreCase("!SecureOff") && machine != null) {
+							// The client wants to turn secure off
+							String reply = machine.encrypt("!SecureOff");
+							out.writeUTF(reply);
+							machine = null;
+							System.out.println("Secure off.");
+							continue;
+						}
+						
+						if (message.equalsIgnoreCase("!Secure") && machine == null) {
+							// The client want to be secure
+							String reply = "!Secure";
+							out.writeUTF(reply);
+							
+							// The process of the Diffie-Hellman key exchange
+							int DH_p = SharedInformation.DH_p;
+							int DH_g = SharedInformation.DH_g;
+							message = in.readUTF();
+							int DH_A = Integer.parseInt(message);
+							int DH_b = 15; // The number we secretly choose
+							int DH_B = (int) (((long)Math.pow(DH_g, DH_b)) % DH_p);
+							reply = "" + DH_B;
+							out.writeUTF(reply);
+							int DH_s = (int) (((long)Math.pow(DH_A, DH_b)) % DH_p);
+							
+							// Use the secret key to determine a scheme and construct a machine
+							int secretKey = DH_s;
+							int index = secretKey % SharedInformation.schemePermutations.length;
+							int[][] schemePermutation = SharedInformation.schemePermutations[index];
+							Scheme scheme = new Scheme(schemePermutation);
+							machine = new RotorMachine(scheme);
+							System.out.println("Secured. Following messages will be encrypted.");
+							continue;
+						}
+						
 						// The service is simply echoing back the received message
 						String reply = "ECHO " + message;
-						reply = machine.encrypt(reply);
+						if (machine != null) {
+							// We are communicating in secure
+							reply = machine.encrypt(reply);
+						}
 						out.writeUTF(reply);
 						
 					} catch (Exception e) {
