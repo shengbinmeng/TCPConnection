@@ -24,87 +24,48 @@ public class SecureTcpClient extends Thread {
 			InputStream inFromServer = clientSocket.getInputStream();
 			DataInputStream in = new DataInputStream(inFromServer);
 			
-			RotorMachine machine = null;
+			// The process of the Diffie-Hellman key exchange
+			int DH_p = SharedInformation.DH_p;
+			int DH_g = SharedInformation.DH_g;
+			int DH_a = 6; // The number we secretly choose
+			int DH_A = (int) (((long)Math.pow(DH_g, DH_a)) % DH_p); // 8
+			String sent = "" + DH_A;
+			out.writeUTF(sent);
+			String received = in.readUTF();
+			int DH_B = Integer.parseInt(received);
+			int DH_s = (int) (((long)Math.pow(DH_B, DH_a)) % DH_p);
+			
+			// Use the secret key to determine a scheme and construct a machine
+			int secretKey = DH_s;
+			int index = secretKey % SharedInformation.schemePermutations.length;
+			int[][] schemePermutation = SharedInformation.schemePermutations[index];
+			Scheme scheme = new Scheme(schemePermutation);
+			RotorMachine machine = new RotorMachine(scheme);
+			System.out.println("Secured. Following messages will be encrypted.");
+			
 			while (true) {
 				String message = inFromUser.readLine();
 				if (message == null) {
 					break;
 				}
-				
 				// Ignore the empty input
 				if (message.equals("")) {
 					continue;
 				}
 				
-				// Go secure when the user inputs "!Secure"
-				if (message.equalsIgnoreCase("!Secure") && machine == null) {
-					// Generate a key and go secure with the server
-					out.writeUTF(message);
-					String reply = in.readUTF();
-					if (reply.equalsIgnoreCase("!Secure") == false) {
-						System.out.println("Server replyed with: " + reply);
-						System.out.println("Something wrong!");
-						break;
-					}
-					
-					// The process of the Diffie-Hellman key exchange
-					int DH_p = SharedInformation.DH_p;
-					int DH_g = SharedInformation.DH_g;
-					int DH_a = 6; // The number we secretly choose
-					int DH_A = (int) (((long)Math.pow(DH_g, DH_a)) % DH_p); // 8
-					message = "" + DH_A;
-					out.writeUTF(message);
-					reply = in.readUTF();
-					int DH_B = Integer.parseInt(reply);
-					int DH_s = (int) (((long)Math.pow(DH_B, DH_a)) % DH_p);
-					
-					// Use the secret key to determine a scheme and construct a machine
-					int secretKey = DH_s;
-					int index = secretKey % SharedInformation.schemePermutations.length;
-					int[][] schemePermutation = SharedInformation.schemePermutations[index];
-					Scheme scheme = new Scheme(schemePermutation);
-					machine = new RotorMachine(scheme);
-					System.out.println("Secured. Following messages will be encrypted.");
-					continue;
-				}
+				String enctyptedMessage = machine.encrypt(message);
+				out.writeUTF(enctyptedMessage);
 				
-				// Turn secure off when the user inputs "!SecureOff"
-				if (message.equalsIgnoreCase("!SecureOff") && machine != null) {
-					message = machine.encrypt(message);
-					out.writeUTF(message);
-					String reply = in.readUTF();
-					reply = machine.decrypt(reply);
-					if (reply.equalsIgnoreCase("!SecureOff") == false) {
-						System.out.println("Server replyed with: " + reply);
-						System.out.println("Something wrong!");
-						break;
-					}
-					machine = null;
-					System.out.println("Secure off.");
-					continue;
-				}
-				
-				if (machine != null) {
-					// We are communicating in secure
-					String enctyptedMessage = machine.encrypt(message);
-					out.writeUTF(enctyptedMessage);
-				} else {
-					out.writeUTF(message);
-				}
-				
-				// End the communication when the user inputs "!Bye" (case-insensitive)
-				if (message.equalsIgnoreCase("!Bye")) {
+				// End the communication when the user inputs "Bye" (case-insensitive)
+				if (message.equalsIgnoreCase("Bye")) {
 					break;
 				}
 				
 				// Get reply from the server and print it
 				String reply = in.readUTF();
 			    System.out.println("Server replyed with: " + reply);
-				if (machine != null) {
-					// We are communicating in secure
-					reply = machine.decrypt(reply);
-					System.out.println("Server reply decrypted: " + reply);
-				}
+				reply = machine.decrypt(reply);
+				System.out.println("Server reply decrypted: " + reply);
 			}
 			
 			clientSocket.close();
